@@ -1,11 +1,11 @@
 // @ts-check
 import { test, expect } from '@playwright/test';
-import { ProductPage, BasePage } from '../../pages/basePage'
+import { ProductPage, BasePage } from '../../pages/BasePage'
 
 test.describe('Produtos', () => {
 
     test.beforeEach(async ({ page }) => {
-        await page.goto('https://automationexercise.com/');
+        await page.goto('/');
     });
 
 

@@ -1,92 +1,276 @@
-**Visão Geral**
-- **Descrição:**: Projeto de exemplo usando Playwright para testes end-to-end (E2E) em JavaScript.
-- **Objetivo:**: Demonstrar estrutura de testes com padrão Page Object (POM) e executar testes automatizados com Playwright.
+# Projeto de Testes E2E com Playwright, Page Object Model e Allure Report
 
-**Estrutura do Projeto**
-- **`package.json`**: Define dependências e scripts do projeto.
-- **`playwright.config.js`**: Configuração do Playwright (projetos, timeouts, reporter, etc.).
-- **`pages/`**: Contém as classes Page Object usadas pelos testes.
-  - **`BasePage.js`**: Classe base com utilitários e ações comuns entre páginas.
-  - **`LoginPage.js`**: Implementa ações e seletores da página de login.
-  - **`ProductPage.js`**: Implementa ações e seletores da página de produtos.
-- **`tests/e2e/`**: Contém os specs de teste E2E.
-  - **`login.spec.js`**: Testes relacionados ao fluxo de login.
-  - **`produtos.spec.js`**: Testes relacionados à funcionalidade de produtos.
+## Visão Geral
 
-**Pré-requisitos**
-- **Node.js**: Recomendado Node >= 16 (ver `engines` no `package.json` se existir).
+Este repositório contém um projeto de exemplo para testes end-to-end (E2E) utilizando **Playwright** com **JavaScript**, aplicando o padrão **Page Object Model (POM)** para organização e reutilização de ações e seletores, e gerando relatórios detalhados com **Allure Report**.
+
+### Objetivos
+- Demonstrar uma estrutura escalável de automação com Playwright usando POM.
+- Facilitar a manutenção e evolução dos testes com separação de responsabilidades.
+- Gerar relatórios ricos com evidências, como *steps*, screenshots e vídeos (em falhas).
+
+---
+
+## Tecnologias e Ferramentas
+
+- **Playwright**: Framework de automação para testes E2E multi-browser.
+- **JavaScript (Node.js)**: Linguagem base do projeto.
+- **Allure Report**: Relatórios HTML com detalhamento de execução, anexos e histórico.
+
+---
+
+## Estrutura do Projeto
+
+- **`package.json`**: Dependências e scripts (execução dos testes e geração de relatórios).
+- **`playwright.config.js`**: Configurações do Playwright (timeouts, *reporters*, browsers, evidências, etc.).
+- **`pages/`**: Implementação do padrão Page Object.
+  - **`BasePage.js`**: Classe base com utilitários, ações e elementos comuns (ex.: acessar menus, validar mensagens...).
+  - **`LoginPage.js`**: Ações, validações e elementos relacionadas ao fluxo de login.
+  - **`ProductPage.js`**: Ações, validações e elementos relacionadas a produtos.
+- **`tests/e2e/`**: Testes E2E.
+  - **`login.spec.js`**: Cenários do fluxo de login.
+  - **`produtos.spec.js`**: Cenários da funcionalidade de produtos.
+
+---
+
+## Organização dos seletores
+
+**Obs:** Atualmente, os seletores estão definidos dentro de cada classe Page Object em `pages/`. Em aplicações maiores, com grande volume de seletores, é recomendado criar uma estrutura dedicada apenas a seletores (por página), por exemplo em uma pasta `locators/` ou `selectors/`. Isso melhora a visualização e manutenção, evitando que os arquivos de *page* fiquem extensos e com responsabilidades misturadas.
+
+Exemplo de estrutura:
+- `pages/`
+  - `LoginPage.js`
+- `locators/`
+  - `LoginLocators.js`
+
+Exemplo de arquivo de seletores (`locators/LoginLocators.js`):
+```js
+export class LoginLocators {
+  constructor(page) {
+    this.inputEmail = page.locator('form', { hasText: 'Login' }).getByPlaceholder('Email Address');
+    this.inputSenha = page.getByRole('textbox', { name: 'Password' });
+    this.btnLogin = page.getByRole('button', { name: 'Login' });
+    this.btnLogout = page.getByRole('link', { name: ' Logout' });
+    this.msgErroLogin = page.locator('form', { hasText: 'Your email or password is incorrect!' });
+  }
+}
+```
+
+Exemplo de uso no `pages/LoginPage.js`:
+```js
+import { LoginLocators } from '../locators/LoginLocators';
+
+export class LoginPage {
+  constructor(page) {
+    this.page = page;
+    this.locators = new LoginLocators(page);
+  }
+
+  async realizarLogin(email, senha) {
+    await this.locators.inputEmail.fill(email);
+    await this.locators.inputSenha.fill(senha);
+    await this.locators.btnLogin.click();
+  }
+}
+```
+
+---
+
+## Pré-requisitos
+
+- **Node.js**: recomendado Node >= 16.
 - **npm** (ou `pnpm`/`yarn` conforme preferência).
+- **Java (JDK)**: recomendado JDK >= 8 (necessário para uso do Allure CLI em alguns ambientes).
 
-**Instalação (Windows - PowerShell)**
+---
+
+## Instalação (Windows PowerShell)
+
 ```powershell
-# Instalar dependências
+# Instalar dependências do projeto
 npm install
 
-# Instalar navegadores do Playwright (apenas se necessário)
+# Instalar browsers do Playwright
 npx playwright install
 ```
 
-**Executando Testes**
-- **Executar toda suíte**:
+---
+
+## Executando os testes
+
+### Executar toda a suíte
 ```powershell
 npx playwright test
 ```
-- **Executar um arquivo de teste específico**:
+
+### Executar um spec específico
 ```powershell
 npx playwright test tests/e2e/login.spec.js
 ```
-- **Executar em modo interativo / debug**:
+
+### Executar em modo debug (inspeção passo a passo)
 ```powershell
 npx playwright test --debug
 ```
-- **Executar no navegador com interface (headed)**:
+
+### Executar com navegador aberto (headed)
 ```powershell
 npx playwright test --headed
 ```
-- **Executar com geração de relatório HTML**:
+
+### Abrir relatório HTML padrão do Playwright
 ```powershell
 npx playwright show-report
 ```
 
-**Como os testes estão organizados (Padrão Page Object)**
-- Os testes usam classes em `pages/` para abstrair interações com a UI.
-- Um spec importa uma Page (por exemplo, `LoginPage`) e chama métodos que representam ações do usuário (ex.: `loginPage.login(email, senha)`).
+---
 
-**Adicionar novos testes**
-- Criar um novo arquivo em `tests/e2e/` terminando com `.spec.js`.
-- Criar/estender uma classe em `pages/` se surgirem novos fluxos de UI.
-- Use descrições claras nos `describe`/`it` para facilitar leitura dos relatórios.
- 
-**Relatório Allure (instalação e uso)**
-- **O que é:** Allure é uma ferramenta de relatórios que gera relatórios HTML ricos a partir dos resultados de execução de testes (com anexos como screenshots, logs e steps).
+## Como os testes estão organizados (Page Object Model)
 
-**1) Pré-requisitos (Windows)**
-- Ter o Node.js e `npm` instalados (já exigido para este projeto).
-- Instalar o binário do Allure CLI (opções):
-  - Via npm (local ao projeto):
+Neste projeto:
+- Os testes em `tests/e2e/` descrevem cenários e validações.
+- As páginas em `pages/` encapsulam interações com a UI, como preenchimento de campos, cliques e validações específicas.
+- Isso reduz duplicação e facilita mudanças na UI, pois ajustes tendem a ser concentrados no Page Object.
+
+### Exemplo de Page (`pages/LoginPage.js`)
+```js
+import { expect } from '@playwright/test';
+import { BasePage } from './BasePage';
+
+export class LoginPage {
+    constructor(page) {
+        this.page = page;
+
+        // Seletores da página de login (ex: input de email, senha, botões, mensagens de erro, etc.)
+
+        this.inputEmail = page.locator('form', { hasText: 'Login' }).getByPlaceholder('Email Address');
+        this.inputSenha = page.getByRole('textbox', { name: 'Password' });
+        this.btnLogin = page.getByRole('button', { name: 'Login' });
+        this.btnLogout = page.getByRole('link', { name: ' Logout' });
+        this.msgErroLogin = page.locator('form', { hasText: 'Your email or password is incorrect!' });
+    }
+
+    // Métodos para interagir com a página de login (ex: preencher campos, clicar em botões, validar mensagens, etc.)
+
+    async preencherEmail(email) {
+        await expect(this.inputEmail).toBeVisible();
+        await this.inputEmail.fill(email);
+    }
+
+    async preencherSenha(senha) {
+        await this.inputSenha.fill(senha);
+    }
+
+    async clicarBotaoLogin() {
+        await this.btnLogin.click();
+    }
+
+    async verificarLoginComSucesso() {
+        await expect(this.btnLogout).toBeVisible();
+    }
+
+    async verificarMensagemErro() {
+        await expect(this.msgErroLogin).toBeVisible();
+    }
+
+    // Método que combina as ações de login, para facilitar a reutilização nos testes
+
+    async realizarLogin(email, senha) {
+        const basePage = new BasePage(this.page);
+        await basePage.acessarLogin();
+        await expect(this.inputEmail).toBeVisible();
+        await this.inputEmail.fill(email);
+        await this.inputSenha.fill(senha);
+        await this.btnLogin.click();
+    }
+}
+```
+
+### Exemplo de Test (`tests/e2e/login.spec.js`)
+```js
+import { test, expect } from '@playwright/test';
+import { BasePage, LoginPage } from '../../pages/BasePage'
+
+test.describe('Login', () => {
+
+  // Executado antes de cada teste
+
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+  });
+
+  // Testes das funcionalidades de login, como login com sucesso, login com dados inválidos, etc.
+
+  test('Realizar login com sucesso', async ({ page }) => {
+
+    // Instância da página de login, para utilizar seus métodos e seletores
+    const loginPage = new LoginPage(page);
+    
+    // Método reutilizável para realizar o login e verificar o sucesso
+    await loginPage.realizarLogin('erro@erro.com', 'senha-errada');
+    await loginPage.verificarLoginComSucesso();
+  });
+
+  test('Realizar login com dados inválidos', async ({ page }) => {
+    const loginPage = new LoginPage(page);
+    
+    // Método reutilizável para realizar o login e verificar a mensagem de erro
+    await loginPage.realizarLogin('erro@erro.com', 'senha-errada');
+    await loginPage.verificarMensagemErro();
+  });
+
+});
+```
+
+---
+
+## Adicionando novos testes
+
+1. Crie um novo arquivo em `tests/e2e/` terminando com `.spec.js`.
+2. Reutilize Pages existentes sempre que possível.
+3. Caso surjam novos fluxos, crie/estenda classes em `pages/`.
+4. Use descrições claras em `describe` e `test` para melhorar legibilidade e relatórios.
+
+---
+
+## Allure Report (instalação e uso)
+
+### O que é
+O **Allure Report** é uma ferramenta de relatórios que gera páginas HTML ricas a partir dos resultados de execução, incluindo:
+- organização por suíte e caso de teste
+- *steps* e evidências
+- anexos (screenshots, vídeos e logs)
+- detalhamento de falhas
+
+---
+
+### 1) Instalar Allure CLI
+
+Opção local no projeto:
 ```powershell
 npm install --save-dev allure-commandline
 ```
-  - Ou globalmente (se preferir usar o comando `allure` diretamente):
+
+Ou global (caso prefira usar `allure` diretamente):
 ```powershell
 npm install -g allure-commandline
 ```
-  - Alternativas no Windows: `choco install allure.commandline` (Chocolatey) ou `scoop install allure` (Scoop), se você usar esses gerenciadores.
 
-**2) Instalar adaptador Allure para Playwright**
-- No projeto, adicione o pacote que integra Playwright com Allure:
+---
+
+### 2) Instalar adaptador Allure para Playwright
 ```powershell
 npm install --save-dev allure-playwright
 ```
 
-Observação: alguns setups usam outros adaptadores, mas `allure-playwright` é conveniente para coletar resultados compatíveis com Allure.
+---
 
-**3) Configurar `playwright.config.js`**
-- Ative o reporter do Allure e configure pasta de saída (`allure-results`). Exemplo mínimo:
+### 3) Configurar o `playwright.config.js`
+
+Exemplo mínimo:
 ```js
-// playwright.config.js
 module.exports = {
-  reporter: [ ['list'], ['allure-playwright'] ],
+  reporter: [['list'], ['allure-playwright']],
   use: {
     screenshot: 'only-on-failure',
     video: 'retain-on-failure'
@@ -94,10 +278,10 @@ module.exports = {
 };
 ```
 
-Se preferir, passe opções ao reporter (ver documentação do `allure-playwright`).
+---
 
-**4) Scripts úteis no `package.json`**
-- Adicione (ou adapte) scripts para facilitar a geração e abertura do relatório:
+### 4) Scripts recomendados no `package.json`
+
 ```json
 "scripts": {
   "test": "npx playwright test",
@@ -108,13 +292,10 @@ Se preferir, passe opções ao reporter (ver documentação do `allure-playwrigh
 }
 ```
 
-Explicação rápida:
-- `test:allure` executa os testes (com o reporter configurado gravando em `allure-results`).
-- `allure:generate` gera o site estático em `allure-report` a partir de `allure-results`.
-- `allure:open` abre o relatório gerado no navegador.
-- `allure:serve` gera e serve o relatório automaticamente (útil para checagens rápidas).
+---
 
-**5) Exemplo completo de fluxo (PowerShell)**
+### 5) Fluxo completo (PowerShell)
+
 ```powershell
 # 1) Executar testes (gera artefatos em "allure-results")
 npx playwright test
@@ -125,15 +306,23 @@ npx allure generate allure-results --clean -o allure-report
 # 3) Abrir relatório no navegador
 npx allure open allure-report
 
-# OU (servidor temporário)
+# Alternativa (gera e serve automaticamente)
 npx allure serve allure-results
 ```
 
-**6) Anexando screenshots / vídeos / logs**
-- Configure captura automática no `playwright.config.js` (`screenshot`, `video`). Os arquivos gerados na pasta padrão serão referenciados pelo `allure-playwright`.
-- Para anexos manuais em testes, pode-se usar a API do Allure ou do Playwright para anexar arquivos (depende do adaptador). O `allure-playwright` já insere steps e anexos básicos automaticamente.
+---
 
-**7) Observações e melhores práticas**
-- Limpe `allure-results` antes de gerar novo relatório quando fizer execuções locais repetidas (`--clean`).
-- Mantenha `allure-report` gerado fora do controle de versão (adicione ao `.gitignore`).
-- Para CI, gere o relatório via script e publique os artefatos ou use um job para servir os relatórios.
+### 6) Evidências (screenshots e vídeos)
+- A captura automática é configurada em `playwright.config.js` via `use.screenshot` e `use.video`.
+- O `allure-playwright` referencia automaticamente os artefatos gerados e os associa aos testes.
+
+---
+
+### 7) Boas práticas
+- Use `--clean` ao gerar o relatório para evitar misturar resultados antigos.
+- Adicione `allure-results/` e `allure-report/` ao `.gitignore` para não versionar artefatos.
+- Em CI, execute os testes, gere os relatórios e publique os artefatos como evidência do pipeline.
+
+## Links úteis
+- [Playwright Page Object Model - Site Oficial](https://playwright.dev/docs/pom)
+- [Mastering Playwright: Best Practices for Web Automation with the Page Object Model - Medium](https://medium.com/%40lucgagan/mastering-playwright-best-practices-for-web-automation-with-the-page-object-model-3541412b03d1)
