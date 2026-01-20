@@ -1,6 +1,6 @@
 import { expect, Page } from '@playwright/test';
-export { ProductPage } from './ProductPage';
-export { LoginPage } from './LoginPage';
+export { ProductPage } from './product/ProductPage';
+export { LoginPage } from './login/LoginPage';
 
 export class BasePage {
     constructor(page) {
