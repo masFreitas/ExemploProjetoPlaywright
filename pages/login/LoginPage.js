@@ -34,9 +34,8 @@ export class LoginPage {
     async realizarLogin(email, senha) {
         const basePage = new BasePage(this.page);
         await basePage.acessarLogin();
-        await expect(this.loginSelectors.inputEmail).toBeVisible();
-        await this.loginSelectors.inputEmail.fill(email);
-        await this.loginSelectors.inputSenha.fill(senha);
-        await this.loginSelectors.btnLogin.click();
+        await this.preencherEmail(email);
+        await this.preencherSenha(senha);
+        await this.clicarBotaoLogin();
     }
 }

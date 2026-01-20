@@ -9,7 +9,6 @@ export class BasePage {
         this.btnHome = page.getByRole('link', { name: ' Home' });
         this.btnProducts = page.getByRole('link', { name: ' Products' });
         this.btnLogin = page.getByRole('link', { name: ' Signup / Login' });
-
     }
 
     async acessarHome() {
@@ -22,9 +21,8 @@ export class BasePage {
         await this.btnLogin.click();
     }
 
-        async acessarProdutos() {
+    async acessarProdutos() {
         await expect(this.btnProducts).toBeVisible();
         await this.btnProducts.click();
     }
-
 }
